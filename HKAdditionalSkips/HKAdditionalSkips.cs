@@ -53,19 +53,39 @@ namespace HKAdditionalSkips
 
             Log("Initializing HKAS");
 
-            //ModHooks.Instance.AttackHook += OnAttack;
-
-            // Create duplicate of Cave Spikes (6)
-            var spikes6 = preloadedObjects["Tutorial_01"]["_Props"].transform.Find("Cave Spikes (6)").gameObject;
+            //ModHooks.Instance.AttackHook += OnAttack;            
+            
+            //var spikes6 = preloadedObjects["Tutorial_01"]["_Props"].transform.Find("Cave Spikes").gameObject;
+            var spikes6 = WTF(preloadedObjects["Tutorial_01"]["_Props"]);
+            if (spikes6 == null)
+                throw new Exception("Are you kidding me?");
             spikes6Prefab = GameObject.Instantiate(spikes6);
+            spikes6Prefab.name = "Cave Spikes HKAS";
             spikes6Prefab.SetActive(false);
             var b = spikes6Prefab.GetComponent<BoxCollider2D>();
             b.size = new Vector2(2.0f, 1.0f);
             b.offset = Vector2.zero;
             GameObject.DontDestroyOnLoad(spikes6Prefab);
 
-            On.GameManager.FinishedEnteringScene += GameManager_FinishedEnteringScene;
+            UnityEngine.SceneManagement.SceneManager.activeSceneChanged += SceneManager_activeSceneChanged;
             Log("Initialized HKAS");
+        }        
+
+        private GameObject WTF(GameObject gameObject)
+        {
+            for (int i = 0; i < gameObject.transform.childCount; i++)
+            {
+                var child = gameObject.transform.GetChild(i).gameObject;
+                if (child.name.StartsWith("Cave Spikes (6)"))
+                {
+                    Log("### Cave Spikes 6 ###"); // TODO: Remove
+                    if (child.GetComponent<BoxCollider2D>() != null)
+                        return child;
+                }
+                    
+            }
+
+            return null;
         }
 
         private void FillSpikeDict(string spikeData, string sceneName)
@@ -86,10 +106,8 @@ namespace HKAdditionalSkips
             spikeDict.Add(sceneName, parsedData);
         }
 
-
-        private void GameManager_FinishedEnteringScene(On.GameManager.orig_FinishedEnteringScene orig, GameManager self)
+        private void SceneManager_activeSceneChanged(UnityEngine.SceneManagement.Scene arg0, UnityEngine.SceneManagement.Scene arg1)
         {
-            orig.Invoke(self);
             var sceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
             if (spikeDict.ContainsKey(sceneName))
             {
